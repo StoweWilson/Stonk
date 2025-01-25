@@ -1,6 +1,15 @@
+from cachetools import TTLCache
 import requests
 
+cache = TTLCache(maxsize=100, ttl=300)
+
 def get_stock_data(symbol):
+    
+    if symbol in cache:
+        printf(f"Cache hit for {symbol}")
+        return cache[symbol]
+    
+    print(f"Cache miss for {symbol}. Fetching from API...")
     API_KEY = 'J1ZYLBNLSLBO1DT5'
     BASE_URL = 'https://www.alphavantage.co/query'
 

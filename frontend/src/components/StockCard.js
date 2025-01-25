@@ -1,24 +1,50 @@
 import React from 'react';
 
-const StockCard = ({ symbol, date, data }) => {
-  if (!data) {
+const StockCard = ({
+  symbol,
+  regularMarketPrice,
+  preMarketPrice,
+  postMarketPrice,
+  previousClose,
+  marketState,
+  error,
+  onRemove,
+}) => {
+  if (error) {
     return (
       <div style={styles.card}>
         <h3>{symbol}</h3>
-        <p>No data available</p>
+        <p>Error fetching data</p>
+        <button onClick={onRemove} style={styles.removeButton}>
+          Remove
+        </button>
       </div>
     );
   }
 
-  const open = parseFloat(data['1. open']).toFixed(2);
-  const close = parseFloat(data['4. close']).toFixed(2);
+  const priceChange =
+    regularMarketPrice && previousClose
+      ? regularMarketPrice - previousClose
+      : null;
+  const isUp = priceChange > 0;
 
   return (
     <div style={styles.card}>
       <h3>{symbol}</h3>
-      <p>Date: {date}</p>
-      <p>Open: ${open}</p>
-      <p>Close: ${close}</p>
+      <p>Market State: {marketState}</p>
+      {marketState === 'PRE' && preMarketPrice && (
+        <p>Pre-Market Price: ${preMarketPrice.toFixed(2)}</p>
+      )}
+      {marketState === 'REGULAR' && regularMarketPrice && (
+        <p>Regular Market Price: ${regularMarketPrice.toFixed(2)}</p>
+      )}
+      {marketState === 'POST' && postMarketPrice && (
+        <p>Post-Market Price: ${postMarketPrice.toFixed(2)}</p>
+      )}
+      <p>Previous Close: ${previousClose.toFixed(2)}</p>
+      <button onClick={onRemove} style={styles.removeButton}>
+        Remove
+      </button>
     </div>
   );
 };
@@ -31,6 +57,27 @@ const styles = {
     margin: '1rem',
     background: '#faf8ef',
     width: '200px',
+  },
+  removeButton: {
+    position: 'absolute',
+    top: '10px',
+    right: '10px',
+    backgroundColor: '#f44336',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '5px',
+    cursor: 'pointer',
+    padding: '5px 10px',
+  },
+  arrowUp: {
+    color: 'green',
+    fontSize: '18px',
+    marginLeft: '5px',
+  },
+  arrowDown: {
+    color: 'red',
+    fontSize: '18px',
+    marginLeft: '5px',
   },
 };
 

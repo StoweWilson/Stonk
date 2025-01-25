@@ -3,97 +3,148 @@ import axios from 'axios';
 import StockCard from '../components/StockCard';
 
 const Dashboard = () => {
-  const [stockSymbols, setStockSymbols] = useState(['AAPL', 'MSFT', 'GOOGL']); // List of stocks
-  const [newStock, setNewStock] = useState('');
-  const [stocks, setStocks] = useState([]); // Holds data for multiple stocks
+  const [stockSymbols, setStockSymbols] = useState(['AAPL', 'MSFT', 'GOOGL']);
+  const [stocks, setStocks] = useState([]); // Stores fetched stock data
+  const [newSymbol, setNewSymbol] = useState('');
+  const [loading, setLoading] = useState(false);
+
 
   useEffect(() => {
-    // Fetch data for each stock symbol
     const fetchData = async () => {
-        try {
-          const fetchedStocks = await Promise.all(
-            stockSymbols.map(async (symbol) => {
-              let response = await axios.get('https://www.alphavantage.co/query', {
-                params: {
-                  function: 'TIME_SERIES_INTRADAY',
-                  symbol,
-                  interval: '5min',
-                  apikey: 'J1ZYLBNLSLBO1DT5',
-                },
-              });
-      
-              let timeSeries = response.data['Time Series (5min)'];
-              let latestDateTime = timeSeries ? Object.keys(timeSeries)[0] : null;
-              let latestData = timeSeries ? timeSeries[latestDateTime] : null;
-      
-              if (!latestData) {
-                // Fallback to daily data if intraday is unavailable
-                response = await axios.get('https://www.alphavantage.co/query', {
-                  params: {
-                    function: 'TIME_SERIES_DAILY',
-                    symbol,
-                    apikey: 'J1ZYLBNLSLBO1DT5',
-                  },
-                });
-      
-                const dailySeries = response.data['Time Series (Daily)'];
-                const latestDate = dailySeries ? Object.keys(dailySeries)[0] : null;
-                latestData = dailySeries ? dailySeries[latestDate] : null;
-      
-                return {
-                  symbol,
-                  datetime: latestDate,
-                  data: latestData,
-                };
-              }
-      
-              return {
-                symbol,
-                datetime: latestDateTime,
-                data: latestData,
-              };
-            })
-          );
-      
-          setStocks(fetchedStocks);
-        } catch (error) {
-          console.error('Error fetching stock data:', error);
-        }
-      };
+        setLoading(true);
+      const fetchedStocks = await Promise.all(
+        stockSymbols.map(async (symbol) => {
+          try {
+            const response = await axios.get('http://127.0.0.1:5000/api/stocks', {
+              params: { symbol },
+            });
+
+            console.log(`Response for ${symbol}:`, response.data);
+            return response.data;
+          } catch (error) {
+            console.error(`Error fetching data for ${symbol}:`, error);
+            return { symbol, error: true };
+          }
+        })
+      );
+
+      setStocks(fetchedStocks);
+      setLoading(false);
+    };
 
     fetchData();
-  }, [stockSymbols]); // Re-run if stockSymbols changes
-  const handleAddStock = () => {
-    if (newStock && !stockSymbols.includes(newStock.toUpperCase())) {
-      setStockSymbols([...stockSymbols, newStock.toUpperCase()]);
-      setNewStock('');
+
+    const interval = setInterval(fetchData,60000);
+
+    return () => clearInterval(interval);
+
+  }, [stockSymbols]);
+
+  const handleAddSymbol = () => {
+    if (newSymbol && !stockSymbols.includes(newSymbol.toUpperCase())) {
+        setStockSymbols([...stockSymbols, newSymbol.toUpperCase()]);
+        setNewSymbol('');
+    }else{
+        alert('Please enter a valid, unique stock symbol.')
     }
+  };
+
+  const handleRemoveSymbol = (symbolToRemove) => {
+    setStockSymbols(stockSymbols.filter((symbol) => symbol !== symbolToRemove));
   };
 
   return (
     <div>
       <h2>Dashboard</h2>
-      <div>
+
+      {/* Add Stock Input */}
+      <div style={styles.addSymbolContainer}>
         <input
           type="text"
           placeholder="Enter stock symbol"
-          value={newStock}
-          onChange={(e) => setNewStock(e.target.value)}
+          value={newSymbol}
+          onChange={(e) => setNewSymbol(e.target.value)}
+          style={styles.input}
         />
-        <button onClick={handleAddStock}>Add Stock</button>
+        <button onClick={handleAddSymbol} style={styles.button}>
+          Add Stock
+        </button>
       </div>
-      <div style={{ display: 'flex', flexWrap: 'wrap' }}>
-        {stocks.map((stock) => (
-          <StockCard
-            key={stock.symbol}
-            symbol={stock.symbol}
-            date={stock.date}
-            data={stock.data}
-          />
-        ))}
-      </div>
+
+      {/* Show Spinner or Stock Cards */}
+      {loading ? (
+        <div style={styles.spinnerContainer}>
+          <div style={styles.spinner}></div>
+          <p>Loading stock data...</p>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexWrap: 'wrap' }}>
+          {stocks.map((stock) => (
+            <StockCard
+              key={stock.symbol}
+              {...stock}
+              onRemove={() => handleRemoveSymbol(stock.symbol)}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 };
+
+
+const styles = {
+    addSymbolContainer: {
+      marginBottom: '20px',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '10px',
+    },
+    input: {
+      padding: '5px',
+      fontSize: '16px',
+    },
+    button: {
+      padding: '5px 10px',
+      fontSize: '16px',
+      backgroundColor: '#4CAF50',
+      color: '#fff',
+      border: 'none',
+      borderRadius: '5px',
+      cursor: 'pointer',
+    },
+    spinnerContainer: {
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      height: '200px',
+    },
+    spinner: {
+      width: '50px',
+      height: '50px',
+      border: '5px solid #ccc',
+      borderTop: '5px solid #4CAF50',
+      borderRadius: '50%',
+      animation: 'spin 1s linear infinite',
+    },
+  };
+  
+  // Add a keyframes animation for the spinner
+  const spinnerKeyframes = `
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+  `;
+  
+  // Inject keyframes into the document head
+  const styleSheet = document.styleSheets[0];
+  styleSheet.insertRule(spinnerKeyframes, styleSheet.cssRules.length);
+  
 
 export default Dashboard;
