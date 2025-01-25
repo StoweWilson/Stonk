@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 import yfinance as yf
 from flask_cors import CORS
+import numpy as np
 
 app = Flask(__name__)
 CORS(app)
@@ -10,22 +11,37 @@ def get_stock_data():
     symbol = request.args.get('symbol', 'AAPL')
 
     try:
-        # Fetch stock data using yfinance
         stock = yf.Ticker(symbol)
-        data = stock.info
+        history = stock.history(period="1mo", interval="1d")  # Fetch last 1 month of daily data
+        prices = history['Close'].tolist()
 
-        # Extract relevant data
+        # Calculate linear regression slope
+        x = np.arange(len(prices))
+        y = np.array(prices)
+        slope, intercept = np.polyfit(x, y, 1)  # Linear regression
+
+        # Determine trend
+        trend = 'upward' if slope > 0 else 'downward' if slope < 0 else 'flat'
+
+        # Suggestion based on trend
+        if trend == 'upward' and slope > 0.5:
+            recommendation = 'Great Buy'
+        elif trend == 'upward':
+            recommendation = 'Good Buy'
+        elif trend == 'downward' and slope < -0.5:
+            recommendation = 'Don’t Buy'
+        else:
+            recommendation = 'Eh'
+
         stock_data = {
             'symbol': symbol,
-            'regularMarketPrice': data.get('regularMarketPrice'),
-            'preMarketPrice': data.get('preMarketPrice'),
-            'postMarketPrice': data.get('postMarketPrice'),
-            'previousClose': data.get('previousClose'),
-            'marketState': data.get('marketState'),  # Shows if the market is open or closed
+            'regularMarketPrice': stock.info.get('regularMarketPrice'),
+            'previousClose': stock.info.get('previousClose'),
+            'trend': trend,
+            'recommendation': recommendation,
         }
 
         return jsonify(stock_data), 200
-
     except Exception as e:
         print(f"Error fetching data for {symbol}: {e}")
         return jsonify({'error': 'Failed to fetch stock data'}), 500
