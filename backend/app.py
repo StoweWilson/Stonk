@@ -79,5 +79,19 @@ def browse_stocks():
 
     return jsonify(result), 200
 
+
+@app.route('/api/market-status', methods=['GET'])
+def get_market_status():
+    # Use any stock to fetch market state, e.g., AAPL
+    stock = yf.Ticker('AAPL')
+
+    try:
+        market_state = stock.info.get('marketState', 'CLOSED')  # REGULAR, PRE, POST, CLOSED
+        return jsonify({'marketState': market_state}), 200
+    except Exception as e:
+        print(f"Error fetching market state: {e}")
+        return jsonify({'error': 'Failed to fetch market status'}), 500
+
+
 if __name__ == '__main__':
     app.run(debug=True)

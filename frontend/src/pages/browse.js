@@ -2,8 +2,23 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
 const Browse = () => {
+  const [marketState, setMarketState] = useState('');
   const [categories, setCategories] = useState({});
   const [loading, setLoading] = useState(true);
+
+
+  useEffect(() => {
+    const fetchMarketState = async () => {
+      try {
+        const response = await axios.get('http://127.0.0.1:5000/api/market-status');
+        setMarketState(response.data.marketState);
+      } catch (error) {
+        console.error('Error fetching market state:', error);
+      }
+    };
+
+    fetchMarketState();
+  }, []);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -27,6 +42,7 @@ const Browse = () => {
   return (
     <div>
       <h2 style={styles.title}>Browse Stocks</h2>
+      <p>Stock Market is: <strong>{marketState === 'REGULAR' ? 'Open' : 'Closed'}</strong></p>
       {Object.entries(categories).map(([category, stocks]) => (
         <div key={category} style={styles.categorySection}>
           <h3>{category.replace('_', ' ').toUpperCase()}</h3>

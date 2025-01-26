@@ -3,13 +3,30 @@ import axios from 'axios';
 import StockCard from '../components/StockCard';
 
 const Dashboard = () => {
-  const [stockSymbols, setStockSymbols] = useState(() => {
+    const [marketState, setMarketState] = useState(''); // Stores market status
+    const [stocks, setStocks] = useState([]);
+    const [stockSymbols, setStockSymbols] = useState(() => {
     const savedSymbols = localStorage.getItem('stockSymbols');
     return savedSymbols ? JSON.parse(savedSymbols) : ['AAPL', 'MSFT', 'GOOGL'];
   });
-  const [stocks, setStocks] = useState([]);
+
   const [loading, setLoading] = useState(false);
   const [newSymbol, setNewSymbol] = useState('');
+
+  useEffect(() => {
+    const fetchMarketState = async () => {
+      try {
+        const response = await axios.get('http://127.0.0.1:5000/api/market-status');
+        console.log('Market state response:', response.data); // Debug log
+        setMarketState(response.data.marketState);
+      } catch (error) {
+        console.error('Error fetching market state:', error); // Log error
+      }
+    };
+  
+    fetchMarketState();
+  }, []);
+
 
   useEffect(() => {
     // Save stockSymbols to localStorage whenever it changes
@@ -60,7 +77,7 @@ const Dashboard = () => {
     <div>
         
       <h2 style={styles.title}>Dashboard</h2>
-
+      <p>Stock Market is: <strong>{marketState === 'REGULAR' ? 'Open' : 'Closed'}</strong></p>
       {/* Add Stock Input */}
       <div style={styles.addSymbolContainer}>
         <input
