@@ -2,7 +2,7 @@
 
 A React-based web application for tracking stock data, managing watchlists, and categorizing stocks into sections like fast earners, big movers, and big companies. The app integrates with a Flask backend powered by Yahoo Finance (yfinance) to provide real-time and historical stock information.
 
-##Features
+## Features
 
 # 🚀 Core Features
 	•	Dashboard: View detailed stock data, including:
