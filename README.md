@@ -2,9 +2,9 @@
 
 A React-based web application for tracking stock data, managing watchlists, and categorizing stocks into sections like fast earners, big movers, and big companies. The app integrates with a Flask backend powered by Yahoo Finance (yfinance) to provide real-time and historical stock information.
 
-## Features
+# Features
 
-# 🚀 Core Features
+## 🚀 Core Features
 	•	Dashboard: View detailed stock data, including:
 	•	Current market price
 	•	Percentage change
@@ -17,7 +17,7 @@ A React-based web application for tracking stock data, managing watchlists, and 
 	•	Fast Earners: High-growth stocks like NVIDIA.
 	•	Big Movers: Stocks with significant daily percentage changes.
 
-# 🔥 Additional Features
+## 🔥 Additional Features
 	•	Dynamic Updates: Stock data auto-refreshes every 60 seconds.
 	•	User-Friendly Design: Includes hover effects, box shadows, and interactive UI elements.
 	•	Responsive Design: Optimized for both desktop and mobile devices.
