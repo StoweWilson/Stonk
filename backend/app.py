@@ -45,6 +45,39 @@ def get_stock_data():
     except Exception as e:
         print(f"Error fetching data for {symbol}: {e}")
         return jsonify({'error': 'Failed to fetch stock data'}), 500
+    
+@app.route('/api/browse', methods=['GET'])
+def browse_stocks():
+    # Define categories and example stock symbols for simplicity
+    categories = {
+        'big_companies': ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA'],  # Large market cap
+        'fast_earners': ['NVDA', 'AMD', 'META'],                     # High growth
+        'big_movers': ['AMC', 'GME', 'BBBY'],                        # High volatility
+    }
+
+    result = {}
+
+    for category, symbols in categories.items():
+        category_data = []
+        for symbol in symbols:
+            try:
+                stock = yf.Ticker(symbol)
+                info = stock.info
+
+                # Extract relevant data
+                stock_data = {
+                    'symbol': symbol,
+                    'name': info.get('shortName'),
+                    'price': info.get('regularMarketPrice'),
+                    'change': info.get('regularMarketChangePercent'),
+                    'market_cap': info.get('marketCap'),
+                }
+                category_data.append(stock_data)
+            except Exception as e:
+                print(f"Error fetching data for {symbol}: {e}")
+        result[category] = category_data
+
+    return jsonify(result), 200
 
 if __name__ == '__main__':
     app.run(debug=True)

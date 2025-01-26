@@ -37,13 +37,14 @@ const StockCard = ({
 
 const styles = {
   card: {
-    border: '1px solid #ccc',
+    border: '2px solid #ccc',
     borderRadius: '8px',
     padding: '1rem',
     margin: '1rem',
-    background: '#faf8ef',
+    background: 'white',
     width: '250px',
     position: 'relative',
+    boxShadow: '4px 4px 7px rgba(0, 0, 0, 0.3)',
   },
   recommendation: {
     fontWeight: 'bold',

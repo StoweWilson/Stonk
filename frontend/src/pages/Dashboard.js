@@ -3,10 +3,18 @@ import axios from 'axios';
 import StockCard from '../components/StockCard';
 
 const Dashboard = () => {
-  const [stockSymbols, setStockSymbols] = useState(['AAPL', 'MSFT', 'GOOGL']);
+  const [stockSymbols, setStockSymbols] = useState(() => {
+    const savedSymbols = localStorage.getItem('stockSymbols');
+    return savedSymbols ? JSON.parse(savedSymbols) : ['AAPL', 'MSFT', 'GOOGL'];
+  });
   const [stocks, setStocks] = useState([]);
   const [loading, setLoading] = useState(false);
   const [newSymbol, setNewSymbol] = useState('');
+
+  useEffect(() => {
+    // Save stockSymbols to localStorage whenever it changes
+    localStorage.setItem('stockSymbols', JSON.stringify(stockSymbols));
+  }, [stockSymbols]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -51,7 +59,7 @@ const Dashboard = () => {
   return (
     <div>
         
-      <h2>Dashboard</h2>
+      <h2 style={styles.title}>Dashboard</h2>
 
       {/* Add Stock Input */}
       <div style={styles.addSymbolContainer}>
@@ -85,6 +93,14 @@ const Dashboard = () => {
 };
 
 const styles = {
+    title:{
+        display: 'flex',
+        alignItems: 'center',
+        textAlign:'center',
+        justifyContent:'center',
+        fontSize:'3vw',
+        
+    },
   addSymbolContainer: {
     marginBottom: '20px',
     display: 'flex',

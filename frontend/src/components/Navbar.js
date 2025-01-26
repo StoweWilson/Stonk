@@ -8,6 +8,7 @@ const Navbar = () => {
       <ul style={styles.navList}>
         <li><Link to="/" style={styles.link}>Dashboard</Link></li>
         <li><Link to="/about" style={styles.link}>About</Link></li>
+        <li><Link to="/browse" style={styles.link}>Browse</Link></li>
       </ul>
     </nav>
   );
