@@ -2,9 +2,11 @@ from flask import Flask, request, jsonify
 import yfinance as yf
 from flask_cors import CORS
 import numpy as np
+import datetime
 
 app = Flask(__name__)
 CORS(app)
+
 
 @app.route('/api/stocks', methods=['GET'])
 def get_stock_data():
@@ -15,15 +17,15 @@ def get_stock_data():
         history = stock.history(period="1mo", interval="1d")  # Fetch last 1 month of daily data
         prices = history['Close'].tolist()
 
-        # Calculate linear regression slope
+        
         x = np.arange(len(prices))
         y = np.array(prices)
         slope, intercept = np.polyfit(x, y, 1)  # Linear regression
 
-        # Determine trend
+        
         trend = 'upward' if slope > 0 else 'downward' if slope < 0 else 'flat'
 
-        # Suggestion based on trend
+        
         if trend == 'upward' and slope > 0.5:
             recommendation = 'Great Buy'
         elif trend == 'upward':
@@ -46,51 +48,85 @@ def get_stock_data():
         print(f"Error fetching data for {symbol}: {e}")
         return jsonify({'error': 'Failed to fetch stock data'}), 500
     
+
+
 @app.route('/api/browse', methods=['GET'])
 def browse_stocks():
-    # Define categories and example stock symbols for simplicity
     categories = {
-        'big_companies': ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA'],  # Large market cap
-        'fast_earners': ['NVDA', 'AMD', 'META'],                     # High growth
-        'big_movers': ['AMC', 'GME', 'BBBY'],                        # High volatility
+        "bigCompanies": [
+            "AAPL", "MSFT", "GOOGL", "AMZN", "TSLA", "NVDA", "META", "BRK-B", "V", "JNJ",
+            "JPM", "UNH", "PG", "XOM", "WMT", "PFE", "DIS", "PEP", "NFLX", "COST"
+        ],  
+        "topMovers": [
+            "AMD", "PYPL", "DIS", "SQ", "BA", "NKE", "PFE", "WMT", "KO", "TGT",
+            "MCD", "HD", "LOW", "CSCO", "IBM", "INTC", "ABNB", "BABA", "NIO", "UBER"
+        ],  
+        "goodBuys": [
+            "T", "VZ", "MRNA", "ABNB", "NIO", "TSM", "CRM", "FDX", "CVX", "MO",
+            "TROW", "GIS", "MMM", "ORCL", "MDT", "LMT", "RTX", "SPGI", "CHTR", "SNOW"
+        ],  
     }
 
-    result = {}
+    results = {}
 
     for category, symbols in categories.items():
-        category_data = []
+        stocks = []
         for symbol in symbols:
             try:
                 stock = yf.Ticker(symbol)
                 info = stock.info
-
-                # Extract relevant data
-                stock_data = {
-                    'symbol': symbol,
-                    'name': info.get('shortName'),
-                    'price': info.get('regularMarketPrice'),
-                    'change': info.get('regularMarketChangePercent'),
-                    'market_cap': info.get('marketCap'),
-                }
-                category_data.append(stock_data)
+                stocks.append({
+                    "symbol": symbol,
+                    "name": info.get("shortName", "N/A"),
+                    "price": info.get("regularMarketPrice"),
+                    "change": info.get("regularMarketChangePercent"),
+                    "marketCap": info.get("marketCap"),
+                    "previousClose": info.get("previousClose"),
+                    "high": info.get("dayHigh"),
+                    "low": info.get("dayLow"),
+                    "volume": info.get("volume"),
+                })
             except Exception as e:
                 print(f"Error fetching data for {symbol}: {e}")
-        result[category] = category_data
+        results[category] = stocks
 
-    return jsonify(result), 200
+    return jsonify(results)
+
 
 
 @app.route('/api/market-status', methods=['GET'])
 def get_market_status():
-    # Use any stock to fetch market state, e.g., AAPL
-    stock = yf.Ticker('AAPL')
-
     try:
+        stock = yf.Ticker('AAPL')
         market_state = stock.info.get('marketState', 'CLOSED')  # REGULAR, PRE, POST, CLOSED
         return jsonify({'marketState': market_state}), 200
     except Exception as e:
         print(f"Error fetching market state: {e}")
         return jsonify({'error': 'Failed to fetch market status'}), 500
+
+
+
+@app.route('/api/stock-history', methods=['GET'])
+def get_stock_history():
+    symbol = request.args.get('symbol', 'AAPL')
+    stock = yf.Ticker(symbol)
+    
+    end_date = datetime.datetime.today().strftime('%Y-%m-%d')
+    start_date = (datetime.datetime.today() - datetime.timedelta(days=30)).strftime('%Y-%m-%d')
+    history = stock.history(period="1mo")
+
+    if history.empty:
+        return jsonify({"error": "No data available"}), 404
+    
+    data = {
+        "dates": history.index.strftime('%Y-%m-%d').tolist(),
+        "prices": history["Close"].tolist(),
+        "open": history["Open"].tolist(),
+        "high": history["High"].tolist(),
+        "low": history["Low"].tolist()
+    }
+    
+    return jsonify(data)
 
 
 if __name__ == '__main__':

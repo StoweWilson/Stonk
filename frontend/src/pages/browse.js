@@ -1,32 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { Grid, Card, CardContent, Typography, Container, Box, CircularProgress } from '@mui/material';
 
 const Browse = () => {
-  const [marketState, setMarketState] = useState('');
-  const [categories, setCategories] = useState({});
+  const [categories, setCategories] = useState({
+    bigCompanies: [],
+    topMovers: [],
+    goodBuys: [],
+  });
   const [loading, setLoading] = useState(true);
-
-
-  useEffect(() => {
-    const fetchMarketState = async () => {
-      try {
-        const response = await axios.get('http://127.0.0.1:5000/api/market-status');
-        setMarketState(response.data.marketState);
-      } catch (error) {
-        console.error('Error fetching market state:', error);
-      }
-    };
-
-    fetchMarketState();
-  }, []);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchCategories = async () => {
       try {
         const response = await axios.get('http://127.0.0.1:5000/api/browse');
-        setCategories(response.data);
-      } catch (error) {
-        console.error('Error fetching browse data:', error);
+        console.log('Fetched categories:', response.data);
+
+        setCategories({
+          bigCompanies: response.data.bigCompanies || [],
+          topMovers: response.data.topMovers || [],
+          goodBuys: response.data.goodBuys || [],
+        });
+      } catch (err) {
+        console.error('Error fetching browse data:', err);
+        setError('Failed to load stock data.');
       } finally {
         setLoading(false);
       }
@@ -35,61 +33,82 @@ const Browse = () => {
     fetchCategories();
   }, []);
 
-  if (loading) {
-    return <p>Loading categories...</p>;
-  }
+  if (loading) return <Box sx={styles.center}><CircularProgress /></Box>;
+  if (error) return <Typography color="error">{error}</Typography>;
 
   return (
-    <div>
-      <h2 style={styles.title}>Browse Stocks</h2>
-      <p>Stock Market is: <strong>{marketState === 'REGULAR' ? 'Open' : 'Closed'}</strong></p>
-      {Object.entries(categories).map(([category, stocks]) => (
-        <div key={category} style={styles.categorySection}>
-          <h3>{category.replace('_', ' ').toUpperCase()}</h3>
-          <div style={styles.stockList}>
-            {stocks.map((stock) => (
-              <div key={stock.symbol} style={styles.stockCard}>
-                <h4>{stock.name} ({stock.symbol})</h4>
-                <p>Price: ${stock.price?.toFixed(2)}</p>
-                <p>Change: {stock.change?.toFixed(2)}%</p>
-                <p>Market Cap: ${stock.market_cap?.toLocaleString()}</p>
-              </div>
+    <Container maxWidth="xl">
+      <Typography variant="h4" gutterBottom>
+        Browse Stocks
+      </Typography>
+
+      {["bigCompanies", "topMovers", "goodBuys"].map((category) => (
+        <div key={category}>
+          <Typography variant="h5" sx={{ mt: 3, mb: 2, fontWeight: 'bold' }}>
+            {category.replace(/([A-Z])/g, ' $1')}
+          </Typography>
+          <Grid container spacing={3}>
+            {(categories[category] || []).map((stock) => (
+              <Grid item xs={12} sm={6} md={4} lg={3} key={stock.symbol}>
+                <Card sx={styles.card}>
+                  <CardContent>
+                    <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                      {stock.name}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Symbol: {stock.symbol}
+                    </Typography>
+                    <Typography sx={styles.price(stock.change)}>
+                      Price: ${stock.price?.toFixed(2)}
+                    </Typography>
+                    <Typography sx={styles.change(stock.change)}>
+                      Change: {stock.change?.toFixed(2)}%
+                    </Typography>
+                    <Typography variant="body2">
+                      High: ${stock.high?.toFixed(2)}
+                    </Typography>
+                    <Typography variant="body2">
+                      Low: ${stock.low?.toFixed(2)}
+                    </Typography>
+                    <Typography variant="body2">
+                      Volume: {stock.volume?.toLocaleString()}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
             ))}
-          </div>
+          </Grid>
         </div>
       ))}
-    </div>
+    </Container>
   );
 };
 
 const styles = {
-    title:{
-        textAlign:'center',
-        display: 'flex',
-        justifyContent:'center',
-        fontSize:'3vw',
-
-    },
-
-  categorySection: {
-    marginBottom: '20px',
-    marginLeft:'10px',
-  },
-  stockList: {
+  center: {
     display: 'flex',
-    flexWrap: 'wrap',
-    gap: '15px',
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: '80vh',
   },
-  stockCard: {
-    border: '2px solid #ccc',
-    borderRadius: '8px',
-    padding: '1rem',
-    margin: '1rem',
-    background: 'white',
-    width: '250px',
-    position: 'relative',
-    boxShadow: '4px 4px 7px rgba(0, 0, 0, 0.3)',
+  card: {
+    padding: '16px',
+    borderRadius: '10px',
+    boxShadow: '0px 4px 10px rgba(0, 0, 0, 0.15)',
+    transition: 'transform 0.2s ease-in-out',
+    '&:hover': {
+      transform: 'scale(1.05)',
+    },
   },
+  price: (change) => ({
+    fontSize: '1.1rem',
+    fontWeight: 'bold',
+  }),
+  change: (change) => ({
+    fontSize: '1.1rem',
+    fontWeight: 'bold',
+    color: change > 0 ? '#4CAF50' : '#f44336', // Green for positive, red for negative
+  }),
 };
 
 export default Browse;
